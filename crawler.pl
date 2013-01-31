@@ -1,32 +1,25 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use Net::HTTP;
+use LWP::Simple;
 
-my @links = getLinks("www.dawilson.co.uk");
+my @links = getLinks("http://www.bbc.co.uk");
 
-getLinks($links[2]);
+foreach my $link (@links) {
+	getLinks($link);
+}
 
 sub getLinks {
 	my ($url) = @_;
-	my $page;
-	my $s = Net::HTTP->new(Host=>$url) || die $@;
-	$s->write_request(GET=>"/",'User-Agent'=>"Mozilla/5.0");
-	my($code,$mess,%h)=$s->read_response_headers;
-	while(1) {
-		my $buf;
-		my $n=$s->read_entity_body($buf,1024);
-		die "read failed: $!" unless defined $n;
-		last unless $n;
-		$page = $page.$buf;
-	}
+	my $page = get($url) || die "Bad URL ";
 	open (FILE, ">>./links.txt") || die "File open error";
 	my @links=$page=~/<a href=\"(.*?)\"/g;
 	foreach my $link (@links) {
-		if (!($link=~/^http/)) {
-			$link = $url."/".$link;
+		if ((!($link=~/^http/))||($link=~/^\//)) {
+			$link = $url.$link;
 		}
 		print FILE $link."\n";
+		print $link."\n";
 	}
 	close FILE;
 	return @links;
